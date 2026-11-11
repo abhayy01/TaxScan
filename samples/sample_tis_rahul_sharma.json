@@ -1,0 +1,28 @@
+{
+  "taxpayerInfo": {
+    "pan": "BPZPS1234A",
+    "taxpayerName": "Rahul Sharma",
+    "assessmentYear": "2025-26",
+    "financialYear": "2024-25",
+    "entityCategory": "Individual"
+  },
+  "tisCategories": [
+    {
+      "infoCode": "S-001",
+      "description": "Salary under section 17(1)",
+      "processedAmount": 680000,
+      "tdsAmount": 18500
+    },
+    {
+      "infoCode": "I-001",
+      "description": "Interest from savings bank",
+      "processedAmount": 15000,
+      "tdsAmount": 0
+    }
+  ],
+  "deductions": {
+    "sec80C": 0,
+    "sec80D": 0
+  },
+  "advanceTaxPaid": 0
+}

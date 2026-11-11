@@ -1,0 +1,16 @@
+{
+  "taxpayerInfo": {
+    "pan": "AABCC4321E",
+    "taxpayerName": "CloudApex Technologies Private Limited",
+    "assessmentYear": "2025-26",
+    "financialYear": "2024-25",
+    "entityCategory": "Company Domestic"
+  },
+  "turnover": 48000000,
+  "netProfit": 6500000,
+  "corporateRegime": "SECTION_115BAA",
+  "prepaid": {
+    "tdsNonSalary": 480000,
+    "advanceTax": 1050000
+  }
+}
