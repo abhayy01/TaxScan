@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TaxScan AI - Tax Computation & Compliance Engine Specification</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 15mm 20mm 15mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.55;
+      color: #1e293b;
+      background: #ffffff;
+      padding: 0;
+    }
+
+    /* Header styling */
+    .header-container {
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      padding: 3px 8px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 18pt;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 9.5pt;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 8pt;
+    }
+
+    .meta-item strong {
+      display: block;
+      color: #475569;
+      text-transform: uppercase;
+      font-size: 7pt;
+      letter-spacing: 0.4px;
+    }
+
+    /* Headings */
+    h2 {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #0f172a;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 4px;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+
+    h3 {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin-bottom: 8px;
+    }
+
+    /* Callout box */
+    .callout {
+      background: #f8fafc;
+      border-left: 3.5px solid #059669;
+      padding: 8px 12px;
+      margin: 10px 0;
+      border-radius: 0 6px 6px 0;
+      font-size: 9pt;
+    }
+
+    .callout.warning {
+      border-left-color: #d97706;
+      background: #fffbeb;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 3px;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 8.5pt;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 5px 8px;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    td.num {
+      text-align: right;
+      font-family: "JetBrains Mono", Consolas, monospace;
+    }
+
+    /* Math & Formula blocks */
+    .formula-box {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 8px 0;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 8.5pt;
+      color: #0f172a;
+      page-break-inside: avoid;
+    }
+
+    .formula-title {
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 700;
+      margin-bottom: 3px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* Lists */
+    ul, ol {
+      margin-left: 18px;
+      margin-bottom: 8px;
+    }
+
+    li {
+      margin-bottom: 3px;
+    }
+
+    /* Code & Tag */
+    code {
+      background: #e2e8f0;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: Consolas, monospace;
+      font-size: 8.5pt;
+      color: #0f172a;
+    }
+
+    /* Footer */
+    .doc-footer {
+      border-top: 1px solid #cbd5e1;
+      padding-top: 8px;
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.5pt;
+      color: #94a3b8;
+    }
+
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Document Header -->
+  <div class="header-container">
+    <span class="badge">Official Technical & Compliance Specification</span>
+    <h1>TaxScan AI Engine Documentation</h1>
+    <div class="subtitle">Tax Computation Architecture, Statutory Slabs, Section Formulas, and Optimization Decision Rules</div>
+    
+    <div class="meta-grid">
+      <div class="meta-item">
+        <strong>Governing Statute</strong>
+        Income Tax Act, 1961
+      </div>
+      <div class="meta-item">
+        <strong>Finance Acts</strong>
+        Finance (No. 2) Act, 2024
+      </div>
+      <div class="meta-item">
+        <strong>Assessment Years</strong>
+        AY 2024-25 & AY 2025-26
+      </div>
+      <div class="meta-item">
+        <strong>Engine Module</strong>
+        taxCalculator.js (v1.2)
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <h2>1. Executive Summary & Regulatory Authority</h2>
+  <p>
+    The <strong>TaxScan AI</strong> engine is an automated, client-side tax computation and audit framework designed for Indian taxpayers. It interprets financial statements, Taxpayer Information Summaries (TIS), Annual Information Statements (AIS), Form 16, and Form 26AS to assess statutory return filing mandates and exact net liabilities or refunds.
+  </p>
+
+  <div class="callout">
+    <div class="callout-title">Statutory Grounding</div>
+    All computational algorithms strictly abide by the Income Tax Act, 1961, as amended by the Finance Act 2023 and the Finance (No. 2) Act 2024, incorporating official clarification circulars published by the Central Board of Direct Taxes (CBDT), Ministry of Finance, Government of India.
+  </div>
+
+  <!-- SECTION 2 -->
+  <h2>2. Section-by-Section Computation Formulas</h2>
+
+  <h3>2.1 Standard Deduction — Section 16(ia)</h3>
+  <p>Standard deduction is automatically subtracted from Gross Salary income without requiring investment or expenditure receipts:</p>
+  
+  <div class="formula-box">
+    <div class="formula-title">Mathematical Formula</div>
+    Net Salary = max(0, Gross Salary - min(Gross Salary, Deduction Cap))<br>
+    • Deduction Cap (AY 2025-26 Budget 2024 revised): ₹75,000<br>
+    • Deduction Cap (AY 2024-25 & Old Tax Regime): ₹50,000
+  </div>
+
+  <h3>2.2 Simplified Tax Plan (New Regime) — Section 115BAC(1A)</h3>
+  <p>The default statutory regime under current tax law. Calculated progressively across income slices:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Taxable Income Bracket (I)</th>
+        <th>Marginal Rate</th>
+        <th>AY 2025-26 Formula (Budget 2024)</th>
+        <th>AY 2024-25 Formula</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Up to ₹3,00,000</td>
+        <td>Nil (0%)</td>
+        <td class="num">₹0</td>
+        <td class="num">₹0</td>
+      </tr>
+      <tr>
+        <td>₹3,00,001 to ₹6,00,000 / ₹7,00,000</td>
+        <td>5%</td>
+        <td class="num">(I - ₹3,00,000) × 5%</td>
+        <td class="num">(I - ₹3,00,000) × 5%</td>
+      </tr>
+      <tr>
+        <td>₹7,00,001 to ₹9,00,000 / ₹10,00,000</td>
+        <td>10%</td>
+        <td class="num">₹20,000 + (I - ₹7,00,000) × 10%</td>
+        <td class="num">₹15,000 + (I - ₹6,00,000) × 10%</td>
+      </tr>
+      <tr>
+        <td>₹10,00,001 to ₹12,00,000</td>
+        <td>15%</td>
+        <td class="num">₹50,000 + (I - ₹10,00,000) × 15%</td>
+        <td class="num">₹45,000 + (I - ₹9,00,000) × 15%</td>
+      </tr>
+      <tr>
+        <td>₹12,00,001 to ₹15,00,000</td>
+        <td>20%</td>
+        <td class="num">₹80,000 + (I - ₹12,00,000) × 20%</td>
+        <td class="num">₹90,000 + (I - ₹12,00,000) × 20%</td>
+      </tr>
+      <tr>
+        <td>Above ₹15,00,000</td>
+        <td>30%</td>
+        <td class="num">₹1,40,000 + (I - ₹15,00,000) × 30%</td>
+        <td class="num">₹1,50,000 + (I - ₹15,00,000) × 30%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 Section 87A Tax Rebate & Statutory Marginal Relief</h3>
+  <p>Section 87A provides a 100% tax waiver for low-to-middle income earners with continuous marginal relief:</p>
+
+  <div class="formula-box">
+    <div class="formula-title">Section 87A Formulas</div>
+    1. Standard Rebate: If Taxable Income (I) ≤ ₹7,00,000 in Simplified Plan: Rebate = Normal Tax (Tax = ₹0)<br>
+    2. Statutory Marginal Relief: If I > ₹7,00,000 AND Normal Tax > (I - ₹7,00,000):<br>
+    &nbsp;&nbsp;&nbsp;Marginal Relief = Normal Tax - (I - ₹7,00,000)<br>
+    &nbsp;&nbsp;&nbsp;Tax After Rebate = I - ₹7,00,000<br>
+    3. Deductions Plan (Old): Rebate = min(Normal Tax, ₹12,500) if I ≤ ₹5,00,000
+  </div>
+
+  <h3>2.4 Deductions Plan (Old Regime) — Chapter VI-A & Section 24(b)</h3>
+  <p>The classic regime allowing deductions against gross taxable income:</p>
+  <ul>
+    <li><strong>Basic Exemption Limits</strong>: ₹2,50,000 (Individual &lt;60); ₹3,00,000 (Senior Citizen 60–79); ₹5,00,000 (Super Senior 80+).</li>
+    <li><strong>Section 80C</strong>: Capped at ₹1,50,000 (EPF, PPF, ELSS, Life Insurance premiums).</li>
+    <li><strong>Section 80D</strong>: Health insurance premiums (up to ₹25,000 self/family + up to ₹50,000 senior parents = max ₹75,000).</li>
+    <li><strong>Section 80CCD(1B)</strong>: Dedicated deduction for National Pension System (NPS) Tier-1 up to ₹50,000.</li>
+    <li><strong>Section 80CCD(2)</strong>: Employer contribution to NPS (up to 14% of Basic + DA) — <em>allowed in both regimes</em>.</li>
+    <li><strong>Section 24(b)</strong>: Self-occupied residential home loan interest deduction up to ₹2,00,000.</li>
+    <li><strong>Section 80TTA / 80TTB</strong>: Savings bank interest deduction up to ₹10,000 (₹50,000 for senior citizens).</li>
+  </ul>
+
+  <h3>2.5 Special Statutory Rate Incomes</h3>
+  <div class="formula-box">
+    <div class="formula-title">Special Rates (Excluded from Slab Computation)</div>
+    • Short-Term Capital Gains (Section 111A): Taxed at 20% (AY 2025-26) or 15% (AY 2024-25)<br>
+    • Long-Term Capital Gains (Section 112A): Taxed at 12.5% on gains exceeding ₹1.25L (AY 2025-26) or 10% exceeding ₹1.0L (AY 2024-25)<br>
+    • Virtual Digital Assets / Crypto (Section 115BBH): Flat 30% tax (no deduction of expenses allowed)
+  </div>
+
+  <h3>2.6 Corporate Tax Regimes & Minimum Alternate Tax (MAT)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Corporate Classification</th>
+        <th>Statutory Section</th>
+        <th>Base Rate</th>
+        <th>Effective Rate (Surcharge + 4% Cess)</th>
+        <th>MAT Applicable?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Domestic Company (Concessional)</td>
+        <td>Section 115BAA</td>
+        <td class="num">22.00%</td>
+        <td class="num"><strong>25.168%</strong></td>
+        <td>No (MAT Exempt)</td>
+      </tr>
+      <tr>
+        <td>Domestic New Manufacturing Unit</td>
+        <td>Section 115BAB</td>
+        <td class="num">15.00%</td>
+        <td class="num"><strong>17.160%</strong></td>
+        <td>No (MAT Exempt)</td>
+      </tr>
+      <tr>
+        <td>Domestic Co (Turnover ≤ ₹400 Cr)</td>
+        <td>Regular Corporate</td>
+        <td class="num">25.00%</td>
+        <td class="num">26.00% – 29.12%</td>
+        <td>Yes (Sec 115JB @ 15%)</td>
+      </tr>
+      <tr>
+        <td>Domestic Co (Turnover &gt; ₹400 Cr)</td>
+        <td>Regular Corporate</td>
+        <td class="num">30.00%</td>
+        <td class="num">31.20% – 34.94%</td>
+        <td>Yes (Sec 115JB @ 15%)</td>
+      </tr>
+      <tr>
+        <td>Partnership Firm / LLP</td>
+        <td>Finance Act Schedule</td>
+        <td class="num">30.00%</td>
+        <td class="num">31.20% – 34.94%</td>
+        <td>No (Flat 30%)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 3 -->
+  <div class="avoid-break">
+    <h2>3. Optimization Decision Rules & Algorithms</h2>
+    <p>The engine generates targeted, personalized recommendations using algorithmic decision rules:</p>
+
+    <h3>3.1 Regime Arbitrage & Break-Even Deduction Threshold</h3>
+    <p>
+      The engine computes the exact difference: <code>Savings = |Tax_Old - Tax_New|</code>.
+      In Indian taxation, there is a mathematical <strong>Break-Even Deduction Point</strong> (typically ₹3,75,000 to ₹4,25,000). If total deductions are below this threshold, the Simplified Plan produces a lower tax liability while avoiding capital lock-in in ELSS or PPF.
+    </p>
+
+    <h3>3.2 Section 80CCD(1B) NPS Headroom Analysis</h3>
+    <p>
+      The engine calculates <code>Headroom = ₹50,000 - Claimed_80CCD1B</code>. If headroom exists, it calculates immediate savings at the taxpayer's marginal rate:
+      <br>
+      <code>Potential Savings = Headroom × (Marginal Rate × 1.04)</code> (e.g. ₹50,000 in 30% slab yields ₹15,600 tax savings).
+    </p>
+
+    <h3>3.3 Advance Tax Penal Interest Avoidance (Sections 208, 234B & 234C)</h3>
+    <p>
+      Under <strong>Section 208</strong>, advance tax is mandatory if net tax payable after TDS exceeds <strong>₹10,000</strong>.
+      If unpaid, <strong>Section 234C</strong> levies 1% per month on quarterly installment deficits (15% June, 45% Sept, 75% Dec, 100% March), and <strong>Section 234B</strong> levies 1% per month from April 1 if less than 90% was paid. The app alerts users whenever net payable exceeds ₹10,000.
+    </p>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="avoid-break">
+    <h2>4. Coordinate-Aware PDF Parsing Mechanics</h2>
+    <p>
+      Standard PDF text extractors join strings sequentially, scrambling multi-column tables. TaxScan AI implements geometric coordinate sorting:
+    </p>
+    <ol>
+      <li>Sorts text tokens descending by vertical coordinate <code>Y</code> (top of page to bottom).</li>
+      <li>Sorts tokens on the same horizontal line (<code>ΔY ≤ 4 pt</code>) ascending by coordinate <code>X</code> (left to right).</li>
+      <li>Reconstructs table rows into contiguous strings containing Category, TIS Code, and Financial Values.</li>
+      <li>Prioritizes the official, verified <strong>Processed Value</strong> over Reported Value in TIS table rows.</li>
+      <li>Provides a fallback candidate detector that identifies all monetary figures (> ₹500) for one-click manual assignment.</li>
+    </ol>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="avoid-break">
+    <h2>5. Mandatory Return Filing Criteria — Section 139(1)</h2>
+    <p>Under Section 139(1) (including the Seventh Proviso), return filing is legally mandatory if:</p>
+    <ul>
+      <li>Gross Total Income exceeds the basic exemption limit (₹2.5L / ₹3.0L).</li>
+      <li>Total TDS / TCS deducted in the year is ₹25,000 or more (₹50,000 for senior citizens).</li>
+      <li>Electricity consumption expenditure exceeds ₹1,00,000 during the financial year.</li>
+      <li>Expenditure on foreign travel exceeds ₹2,00,000 for self or any other person.</li>
+      <li>Aggregate deposits in current bank accounts exceed ₹50,00,000.</li>
+      <li>Business turnover exceeds ₹60,00,000 or professional receipts exceed ₹10,00,000.</li>
+      <li>The taxpayer holds foreign assets, bank accounts, or signing authority abroad.</li>
+      <li>The entity is a Company or LLP (mandatory regardless of profit or loss).</li>
+    </ul>
+  </div>
+
+  <!-- Document Footer -->
+  <div class="doc-footer">
+    <div>Generated by TaxScan AI Engine • Compliance & Statutory Reference Specification</div>
+    <div>Income Tax Act, 1961 • Central Board of Direct Taxes (CBDT)</div>
+  </div>
+
+</body>
+</html>

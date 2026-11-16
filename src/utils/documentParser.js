@@ -108,7 +108,7 @@ export function detectEntityTypeFromPAN(pan) {
 /**
  * Helper to extract monetary amounts from a text snippet.
  * Handles Indian numbering formats: 12,50,000.00, 1250000, 1,25,000, etc.
- * Filters out years, dates, single digits, and section codes.
+ * Filters out years, dates, pincodes, phone numbers, and statutory section numbers.
  */
 function extractAmountsFromSnippet(snippet) {
   if (!snippet) return [];
@@ -122,10 +122,16 @@ function extractAmountsFromSnippet(snippet) {
     const num = parseFloat(clean);
     if (isNaN(num)) continue;
 
-    // Filter out typical tax year numbers (e.g. 2022, 2023, 2024, 2025, 2026, 2027)
-    if (num >= 2022 && num <= 2027 && !m.includes(',') && !m.includes('.')) continue;
+    // Filter out typical tax year numbers (e.g. 2020 through 2030) when standalone
+    if (num >= 2020 && num <= 2030 && !m.includes(',') && !m.includes('.')) continue;
+    // Filter out standard dates / calendar years
+    if (num === 1961 || num === 2000 || num === 2024 || num === 2025) continue;
     // Filter out common section numbers
-    if ([17, 192, 194, 80, 115, 111, 112, 139, 234].includes(num)) continue;
+    if ([10, 16, 17, 24, 44, 50, 54, 56, 80, 87, 111, 112, 115, 139, 140, 192, 194, 206, 208, 234].includes(num)) continue;
+    // Filter out 6-digit Indian PIN codes if without comma/dot
+    if (num >= 110000 && num <= 999999 && !m.includes(',') && !m.includes('.')) continue;
+    // Filter out 10-digit mobile phone numbers if without comma/dot
+    if (num >= 6000000000 && num <= 9999999999 && !m.includes(',') && !m.includes('.')) continue;
     // Filter out trivial counts or small amounts (< 50)
     if (num < 50) continue;
 
@@ -348,15 +354,16 @@ export function parseTaxDocumentText(text, fileName = '', lines = []) {
     }
   }
 
-  // 8. TAXES PRE-PAID (TDS, TCS, Advance Tax)
-  const tdsSalaryMatches = scanCategoryFromLines(['TDS on Salary', '192 TDS', 'Tax deducted on salary', 'Total TDS on Salary', 'TDS-01', '192']);
-  const tdsOtherMatches = scanCategoryFromLines(['TDS on other', '194 TDS', 'Tax Deducted at Source', 'Total TDS', 'TDS Credit', 'TDS-02']);
-  const advanceTaxMatches = scanCategoryFromLines(['Advance Tax', 'Advance Tax Paid', 'Challan 280', 'BSR Code', 'AT-01']);
+  // 8. TAXES PRE-PAID (TDS, TCS, Advance Tax, Self-Assessment Tax)
+  const tdsSalaryMatches = scanCategoryFromLines(['TDS on Salary', '192 TDS', 'Tax deducted on salary', 'Total TDS on Salary', 'TDS-01', 'Sec 192', 'Section 192']);
+  const tdsOtherMatches = scanCategoryFromLines(['TDS on other', '194 TDS', 'Tax Deducted at Source', 'Total TDS', 'TDS Credit', 'TDS-02', '194A', '194C', '194J', '194H', '194I', '194Q']);
+  const advanceTaxMatches = scanCategoryFromLines(['Advance Tax', 'Advance Tax Paid', 'Challan 280', 'BSR Code', 'AT-01', 'Minor Head 100']);
+  const selfAssessmentMatches = scanCategoryFromLines(['Self Assessment Tax', 'Self-Assessment Tax', 'SAT-01', 'Minor Head 300', '140A']);
   const tcsMatches = scanCategoryFromLines(['TCS', 'Tax Collected at Source', '206C', 'TCS-01']);
 
   if (tdsSalaryMatches.length > 0) {
     extracted.prepaid.tdsSalary = Math.max(...tdsSalaryMatches.map(m => m.amount));
-    extracted.matchedItems.push({ code: 'TDS-SAL', category: 'Tax Deducted by Employer (TDS)', value: extracted.prepaid.tdsSalary });
+    extracted.matchedItems.push({ code: 'TDS-SAL', category: 'Tax Deducted by Employer (TDS u/s 192)', value: extracted.prepaid.tdsSalary });
   }
   if (tdsOtherMatches.length > 0) {
     const val = Math.max(...tdsOtherMatches.map(m => m.amount));
@@ -365,25 +372,71 @@ export function parseTaxDocumentText(text, fileName = '', lines = []) {
       extracted.matchedItems.push({ code: 'TDS-SAL', category: 'Tax Deducted (TDS)', value: val });
     } else {
       extracted.prepaid.tdsNonSalary = val;
-      extracted.matchedItems.push({ code: 'TDS-OTH', category: 'TDS from Banks / Clients', value: val });
+      extracted.matchedItems.push({ code: 'TDS-OTH', category: 'TDS from Banks / Clients (Form 26AS)', value: val });
     }
   }
   if (advanceTaxMatches.length > 0) {
     extracted.prepaid.advanceTax = advanceTaxMatches.reduce((acc, m) => acc + m.amount, 0);
-    extracted.matchedItems.push({ code: 'ADV-TAX', category: 'Advance Tax Deposited', value: extracted.prepaid.advanceTax });
+    extracted.matchedItems.push({ code: 'ADV-TAX', category: 'Advance Tax Deposited (Challan 280)', value: extracted.prepaid.advanceTax });
+  }
+  if (selfAssessmentMatches.length > 0) {
+    extracted.prepaid.selfAssessmentTax = selfAssessmentMatches.reduce((acc, m) => acc + m.amount, 0);
+    extracted.matchedItems.push({ code: 'SAT-01', category: 'Self-Assessment Tax Paid (Section 140A)', value: extracted.prepaid.selfAssessmentTax });
   }
   if (tcsMatches.length > 0) {
     extracted.prepaid.tcs = Math.max(...tcsMatches.map(m => m.amount));
-    extracted.matchedItems.push({ code: 'TCS-01', category: 'Tax Collected at Source (TCS)', value: extracted.prepaid.tcs });
+    extracted.matchedItems.push({ code: 'TCS-01', category: 'Tax Collected at Source (Section 206C)', value: extracted.prepaid.tcs });
   }
 
-  // 9. DEDUCTIONS (80C, 80D, 24b)
-  const sec80CMatches = scanCategoryFromLines(['80C', 'Section 80C', 'Deduction under 80C', 'PPF', 'EPF', 'ELSS']);
-  const sec80DMatches = scanCategoryFromLines(['80D', 'Section 80D', 'Health Insurance']);
-  const sec24bMatches = scanCategoryFromLines(['24(b)', 'Housing loan interest', 'Home loan interest']);
-  if (sec80CMatches.length > 0) extracted.deductions.sec80C = Math.min(150000, Math.max(...sec80CMatches.map(m => m.amount)));
-  if (sec80DMatches.length > 0) extracted.deductions.sec80D = Math.min(75000, Math.max(...sec80DMatches.map(m => m.amount)));
-  if (sec24bMatches.length > 0) extracted.deductions.section24b = Math.min(200000, Math.max(...sec24bMatches.map(m => m.amount)));
+  // 9. DEDUCTIONS (Chapter VI-A & Section 24b)
+  const sec80CMatches = scanCategoryFromLines(['80C', 'Section 80C', 'Deduction under 80C', 'PPF', 'EPF', 'ELSS', '80CCC']);
+  const sec80DMatches = scanCategoryFromLines(['80D', 'Section 80D', 'Health Insurance', 'Medical Insurance']);
+  const sec80CCD1BMatches = scanCategoryFromLines(['80CCD(1B)', '80CCD1B', 'NPS Tier 1', 'National Pension System']);
+  const sec80CCD2Matches = scanCategoryFromLines(['80CCD(2)', '80CCD2', 'Employer NPS']);
+  const sec24bMatches = scanCategoryFromLines(['24(b)', '24b', 'Housing loan interest', 'Home loan interest', 'Interest on borrowed capital']);
+  const sec80EMatches = scanCategoryFromLines(['80E', 'Section 80E', 'Education loan interest', 'Higher education loan']);
+  const sec80GMatches = scanCategoryFromLines(['80G', 'Section 80G', 'Donation', 'Donations', 'PM CARES', 'PMNRF']);
+  const sec80GGMatches = scanCategoryFromLines(['80GG', 'Section 80GG', 'Rent paid u/s 80GG']);
+
+  if (sec80CMatches.length > 0) {
+    extracted.deductions.sec80C = Math.min(150000, Math.max(...sec80CMatches.map(m => m.amount)));
+    extracted.matchedItems.push({ code: 'SEC-80C', category: 'Section 80C (PPF/EPF/ELSS)', value: extracted.deductions.sec80C });
+  }
+  if (sec80DMatches.length > 0) {
+    extracted.deductions.sec80D = Math.min(75000, Math.max(...sec80DMatches.map(m => m.amount)));
+    extracted.matchedItems.push({ code: 'SEC-80D', category: 'Section 80D (Health Insurance)', value: extracted.deductions.sec80D });
+  }
+  if (sec80CCD1BMatches.length > 0) {
+    extracted.deductions.sec80CCD1B = Math.min(50000, Math.max(...sec80CCD1BMatches.map(m => m.amount)));
+    extracted.matchedItems.push({ code: 'SEC-80CCD1B', category: 'Section 80CCD(1B) (NPS)', value: extracted.deductions.sec80CCD1B });
+  }
+  if (sec80CCD2Matches.length > 0) {
+    extracted.deductions.employerNPS = Math.max(...sec80CCD2Matches.map(m => m.amount));
+    extracted.matchedItems.push({ code: 'SEC-80CCD2', category: 'Section 80CCD(2) (Employer NPS)', value: extracted.deductions.employerNPS });
+  }
+  if (sec24bMatches.length > 0) {
+    extracted.deductions.section24b = Math.min(200000, Math.max(...sec24bMatches.map(m => m.amount)));
+    extracted.matchedItems.push({ code: 'SEC-24B', category: 'Section 24(b) (Home Loan Interest)', value: extracted.deductions.section24b });
+  }
+  if (sec80EMatches.length > 0) {
+    extracted.deductions.sec80E = Math.max(...sec80EMatches.map(m => m.amount));
+    extracted.matchedItems.push({ code: 'SEC-80E', category: 'Section 80E (Education Loan Interest)', value: extracted.deductions.sec80E });
+  }
+  if (sec80GMatches.length > 0) {
+    extracted.deductions.sec80G = Math.max(...sec80GMatches.map(m => m.amount));
+    extracted.matchedItems.push({ code: 'SEC-80G', category: 'Section 80G (Charitable Donations)', value: extracted.deductions.sec80G });
+  }
+  if (sec80GGMatches.length > 0) {
+    extracted.deductions.sec80GG = Math.min(60000, Math.max(...sec80GGMatches.map(m => m.amount)));
+    extracted.matchedItems.push({ code: 'SEC-80GG', category: 'Section 80GG (Rent Paid)', value: extracted.deductions.sec80GG });
+  }
+
+  // 10. CRYPTO / VIRTUAL DIGITAL ASSETS (115BBH)
+  const cryptoMatches = scanCategoryFromLines(['115BBH', 'Crypto', 'Virtual digital asset', 'VDA', 'WazirX', 'CoinDCX', 'Bitcoin']);
+  if (cryptoMatches.length > 0) {
+    extracted.cryptoVDA = Math.max(...cryptoMatches.map(m => m.amount));
+    extracted.matchedItems.push({ code: 'CRYPTO-115BBH', category: 'Crypto / Virtual Assets (Section 115BBH)', value: extracted.cryptoVDA });
+  }
 
   // =========================================================================
   // SMART FALLBACK RECOVERY:

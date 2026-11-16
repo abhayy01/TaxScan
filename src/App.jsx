@@ -86,7 +86,7 @@ export default function App() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              TaxScan AI — Plain-English Tax Summary
+              TaxScan AI — Smart Tax Summary
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
               Upload your Taxpayer Information Summary (TIS), AIS, or Form 16 to instantly find out if you owe taxes or get a refund. Hover over any item for legal section details.

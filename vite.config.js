@@ -6,5 +6,16 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2022'
+    }
+  },
+  esbuild: {
+    target: 'es2022'
+  },
+  build: {
+    target: 'es2022'
   }
 });
